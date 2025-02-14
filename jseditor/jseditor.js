@@ -3,8 +3,7 @@
 let oldRecord = null;
 let editor = null;
 
-async function loadMonacoEditor() {
-  console.error("Loading Monaco");
+function loadMonacoEditor() {
   require.config(
     {paths: {'vs': 'https://unpkg.com/monaco-editor@0.33.0/min/vs'}}
   );
@@ -20,8 +19,7 @@ async function loadMonacoEditor() {
   });
 }
 
-function save(record, mappings) {
-  console.error("Saving:", editor, record);
+async function save(record, mappings) {
   const js = editor.getValue();
   grist.selectedTable.update(
     {id: record.id, fields: {[mappings["jsField"]]: js}}
@@ -32,7 +30,6 @@ function onRecord(record, mappings) {
   // Save old record
   if (oldRecord) { save(oldRecord, mappings) };
   // Load new record
-  console.error("Set Monaco value", editor, record);
   editor.setValue(record[mappings["jsField"]]);
   // Set current as old record
   oldRecord = record;
@@ -46,8 +43,8 @@ function onRecord(record, mappings) {
 async function configureGristSettings() {
   grist.onRecord(onRecord);
   grist.ready({
+      requiredAccess: 'full',
       columns: [
-      // See: https://support.getgrist.com/widget-custom/#column-mapping
       {
         name: "jsField",
         title: "Javascript", 
@@ -57,7 +54,6 @@ async function configureGristSettings() {
         allowMultiple: false,
       },
     ],
-    requiredAccess: 'full',
   });
 }
 
@@ -67,8 +63,8 @@ function ready(fn) {
 }
 
 ready(async () => {
-  await loadMonacoEditor();
-  await configureGristSettings();
+  loadMonacoEditor();
+  configureGristSettings();
 });
 
 
