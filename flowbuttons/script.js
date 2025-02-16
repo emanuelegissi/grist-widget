@@ -13,7 +13,8 @@ const context = {
   "actions": null,
 };
 
-let lock = false;  // button container lock
+
+let lock = false;
 
 // Utilities
 
@@ -70,7 +71,7 @@ async function duplicateRecordWrap({tableId, record, keys, confirmText=null, set
 // Premade isActive functions
 
 async function isValid(context, action, record) {
-  return (!record[context["errField"]]);  // no errors, validation ok  
+  return (!record[context.errField]);  // no errors, validation ok  
 }
 
 // Premade onclick functions
@@ -202,7 +203,7 @@ async function onRecord(record, mappings) {
   if (mappings["processField"] && mappings["statusField"] && mappings["errorField"]) {
     context.processField = mappings["processField"];
     context.statusField = mappings["statusField"];
-    context.errorField = mappings["errorField"];
+    context.errField = mappings["errorField"];
   } else {
     // req columns not mapped.
     throwErr("Missing column mapping in widget settings");
