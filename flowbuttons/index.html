@@ -1,42 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html  lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flowbuttons</title>
+  <title>Grist Flow Buttons</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
-  <script src="script.js"></script>
-  <style>
-    .div {
-      display: flex;
-      flex-direction: row;
-      gap: 10px;
-      padding: 6px;
-      font-size: 16px;
-    }
-    .flowpara {
-      display: block;
-      color: red;
-      padding: 4px 8px;
-      font-size: 16px;
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0px;
-    }
-    .flowbtn {
-      display: block;
-      color: #FFFFFF;
-      background-color: #3B82F6;
-      border: 1px solid;
-      padding: 4px 8px;
-      font-size: 16px;
-      font-family: Arial, Helvetica, sans-serif;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .flowbtn:hover {border: 1px solid #494949;}
-    .flowbtn:active {background-color: #494949;}
-  </style>
+  <script src="flowbuttons.js"></script>
+  <link rel="stylesheet" href="flowbuttons.css">
 </head>
 <body>
-  <div id="container" class="div"></div>
+  <div id="app">
+    <div class="container">
+      <div
+        v-for="msg in msgs"
+        :key="msg.id"
+        class="flowpara"
+      >
+        {{ msg.text }}
+      </div>
+      <button
+        v-for="btn in btns"
+        :key="btn.id"
+        :title="btn.desc"
+        :style="{ backgroundColor: btn.color }"
+        @click="btn.onclick"
+        class="flowbtn"
+      >
+        {{ btn.label }}
+      </button>
+    </div>
+  </div>
 </body>
 </html>
