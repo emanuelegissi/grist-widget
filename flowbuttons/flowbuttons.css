@@ -22,7 +22,7 @@ body {
 .flowpara {
   display: block;
   color: red;
-  padding: 4px 8px;
+  padding: 6px 8px;
   font-size: inherit;
   font-family: inherit;
   font-weight: inherit;
@@ -34,7 +34,7 @@ body {
   color: #FFFFFF;
   background-color: #3B82F6;
   border: 1px solid;
-  padding: 4px 8px;
+  padding: 6px 8px;
   font-size: inherit;
   font-family: inherit;
   font-weight: inherit;

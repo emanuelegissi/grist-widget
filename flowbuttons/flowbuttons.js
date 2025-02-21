@@ -20,10 +20,9 @@ const data = {  // Vue data
 
 // Utilities
 
-function throwErr(msg) {
-  alert(`ERROR: ${msg}`);
-  data.msg = [msg,];
-  throw new Error(msg);
+function throwErr(text) {
+  alert(`ERROR: ${text}`);
+  throw new Error(text);
 }
 
 // Wrapper functions (for convenience)
@@ -64,7 +63,7 @@ async function duplicateRecordWrap({tableId, record, cols, confirmText=null, set
   );
   try {
       return await addRecordWrap({tableId: tableId, fields: fields, setCursor: setCursor});
-  } catch (err) {alert(`Cannot duplicate record in <${tableId}> table: ${err}`);}
+  } catch (err) { alert(`Cannot duplicate record in <${tableId}> table: ${err}`); }
 }
 
 // Premade isactive functions
@@ -81,7 +80,7 @@ async function addRecord(action, record) {
 }
 
 async function delRecord(action, record) {
-   if (!confirm("Delete record?")) { return; }
+  if (!confirm("Delete record?")) { return; }
   grist.selectedTable.destroy([record.id]);
 }
 
@@ -94,20 +93,24 @@ async function updateStatus(action, record) {
 
 // Load tables
 
+async function hasReqTables() {
+  const reqTables = [config.modulesTable, config.actionsTable];
+  const tables = await grist.docApi.listTables();
+  for (let reqTable of reqTables) {
+    if (!(tables.includes(reqTable))) { throwErr(`Missing <${reqTable}> table`); }
+  }
+  return true;
+}
+
 async function getTableData(tableId, reqCols=[]) {
   let tableData = null;
   let cols = null;
   try {
     tableData = await grist.docApi.fetchTable(tableId);
     cols = Object.keys(tableData);
-  } catch (err) {
-    throwErr(`While getting <${tableId}> table data: ${err}`)
-  }
-  for (let reqCol in reqCols) {
-    if (!(reqCol in cols)) {
-      throwErr(`Missing column <${reqCol}> in <${tableId}> table`);
-      return;
-    }
+  } catch (err) { throwErr(`While getting <${tableId}> table data: ${err}`); }
+  for (let reqCol of reqCols) {
+    if (!cols.includes(reqCol)) { throwErr(`Missing column <${reqCol}> in <${tableId}> table`); }
   }
   return tableData;
 }
@@ -121,18 +124,13 @@ async function updateModules() {
     if (!active) { continue; }
     const name = tableData.name[i];
     const js = tableData.js[i];
-    if (!name || name in modules) {
-      throwErr(`Empty or duplicated name <${name}> in <${tableId}> table`);
-    }
+    if (!name || name in modules) { throwErr(`Empty or duplicated name <${name}> in <${tableId}> table`); }
     try {
       modules[name] = await import(`data:text/javascript,${js}`);
-    } catch (err) {
-      throwErr(`While importing <${name}> module: ${err}`);
-    }
+    } catch (err) { throwErr(`While importing <${name}> module: ${err}`); }
   }
   cache.modules = modules;
 }
-
 
 // Get the actual function from its name
 
@@ -145,9 +143,7 @@ function getActionFn(action, name) {
     else if (length == 1 && ps[0]) { fn = window[ps[0]]; }  // global fn
     if (!fn) { throw new Error(`Function <${name}> not found`); }
     return fn;
-  } catch(err) {
-    throwErr(`Getting function <${name}> of <${action.label}> action: ${err}`);
-  }
+  } catch(err) { throwErr(`Getting function <${name}> of <${action.label}> action: ${err}`); }
 }
 
 async function updateActions() {
@@ -155,7 +151,7 @@ async function updateActions() {
   const tableId = config.actionsTable;
   const tableData = await getTableData(
     tableId,
-    ["processes", "label", "desc", "color", "isactive", "onclick", "start_status", "end_status"],
+    ["processes", "label", "desc", "color", "isactive", "onclick", "start_status", "end_status", "id", "manualSort"],
   );
   const cols = Object.keys(tableData);
   // Prepare action record
@@ -168,7 +164,7 @@ async function updateActions() {
     // Check action values
     if (!action.label) { throwErr(`Missing label in action`); }
     if (!Array.isArray(action.processes) || action.processes[0] !== "L") {
-        throwErr(`<${tableId}> table <processes> column is not a <Choice List>.`);
+      throwErr(`<${tableId}> table <processes> column is not a <Choice List>.`);
     }
     action.processes.shift();  // remove "L"
     // Save the actual function instead of its name
@@ -192,9 +188,10 @@ async function updateMsgs(record) {
 }
 
 async function updateBtns(record) {
-  const btns = [];
+  // Refresh actions
   if (!cache.actions) { await updateActions(); }
   // Prepare action buttons
+  const btns = [];
   for (let action of cache.actions) {
     // Action available in this record process?
     if (!action.processes || !action.processes.includes(record[config.processCol])) { continue; }
@@ -208,10 +205,10 @@ async function updateBtns(record) {
     // Replace fn with fn(action, record)
     btn.onclick = () => action.onclick(action, record);
     btns.push(btn);
-    // Refill data.btns view
-    data.btns.length = 0;  // empty the list
-    data.btns.push(...btns);  // refill
   }
+  // Refill data.btns view
+  data.btns.length = 0;  // empty the list
+  data.btns.push(...btns);  // refill
 }
 
 // Vue app
@@ -247,17 +244,28 @@ function onRecord(record, mappings) {
   updateBtns(record);
 }
 
+function onNewRecord(record, mappings) {
+  // Set msgs
+  data.msgs.length = 0;  // empty the list
+  const msg = {id: 0, text: "New record"};
+  data.msgs.push(msg);  // refill
+  // Set btns
+  data.btns.length = 0;  // empty the list  
+}
+
 function ready(fn) {
   if (document.readyState !== 'loading') { fn(); }
   else { document.addEventListener('DOMContentLoaded', fn); }
 }
 
 ready(async function() {
+  // Check tables
+  if (!hasReqTables()) { return; }
   // Create Vue app
   loadVueApp();
   // Configure Grist
   grist.onRecord(onRecord);
-  // grist.onNewRecord(onNewRecord);
+  grist.onNewRecord(onNewRecord);
   grist.ready({
     columns: [
       // See: https://support.getgrist.com/widget-custom/#column-mapping
