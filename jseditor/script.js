@@ -32,7 +32,7 @@ function onRecord(record, mappings) {
   if (oldRecord) { save(oldRecord) };
   // Load new record
   editor.setReadOnly(false);
-  editor.setValue(record[jsField]);
+  editor.setValue(record[jsField], -1);
   // Set current as old record
   oldRecord = record;
   // Set save button onclick fn
@@ -46,7 +46,7 @@ function onNewRecord(record) {
   if (oldRecord) { save(oldRecord) };
   // Load empty record
   editor.setReadOnly(true);
-  editor.setValue("");
+  editor.setValue("", -1);
   // Set none as old record
   oldRecord = none;
   // Set save button disabled
